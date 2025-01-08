@@ -133,6 +133,10 @@ def compare_faces(source_image, target_image_key):
 def hello():
     return 'Hello World'
 
+@app.route('/', methods=['GET'])
+def home():
+    return jsonify({'message': 'Welcome to the Flask App! This is the default page.'})
+
 @app.route('/upload', methods=['POST'])
 def upload():
     try:
