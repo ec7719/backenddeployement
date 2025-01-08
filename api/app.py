@@ -8,7 +8,7 @@ import csv
 from pathlib import Path
 import uuid
 from io import BytesIO
-from mangum import Mangum
+from waitress import serve
 
 # Load environment variables
 dotenv.load_dotenv()
@@ -51,7 +51,7 @@ MAX_CONTENT_LENGTH = 5 * 1024 * 1024  # 5MB
 # Configure CORS
 @app.after_request
 def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
     response.headers.add('Access-Control-Allow-Methods', 'GET,POST')
     return response
@@ -222,10 +222,7 @@ def upload():
             'message': str(e)
         }), 400
 
-# Create a Mangum handler
-handler = Mangum(app)
-
-# If running locally, you can use this to run the app
 if __name__ == '__main__':
+    # Create base directory if it doesn't exist
     BASE_DIR.mkdir(parents=True, exist_ok=True)
-    app.run(host='0.0.0.0', port=3001)
+    serve(app, host='0.0.0.0', port=3001)
