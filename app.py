@@ -58,13 +58,13 @@ def ensure_s3_folder_exists(bucket, folder_path):
 
 def upload_to_s3(file_data, class_name, student_name):
     try:
-        filename = secure_filename(file_data.filename)
+        filename = "image.jpg"  # Generic filename since we're using BytesIO
         key = f"classes/{class_name}/{student_name}/{datetime.now().timestamp()}_{filename}"
         s3.upload_fileobj(
             file_data,
             S3_BUCKET_NAME,
             key,
-            ExtraArgs={'ContentType': file_data.content_type}
+            ExtraArgs={'ContentType': 'image/jpeg'}
         )
         return key
     except Exception as e:
@@ -126,9 +126,6 @@ def home():
 @app.route('/upload', methods=['POST'])
 def upload():
     try:
-        print("Received request with data:", request.form)
-        print("Received files:", request.files)
-
         if 'image' not in request.files:
             return jsonify({'success': False, 'message': 'No file uploaded'}), 400
 
@@ -143,12 +140,13 @@ def upload():
         if not all([class_name, student_name, folder]):
             return jsonify({'success': False, 'message': 'Missing required fields'}), 400
 
-        file_data = file.read()
-
-        # Upload image to S3
-        s3_key = upload_to_s3(file, class_name, student_name)
+        # Read file once and store in memory
+        file_data = BytesIO(file.read())
 
         if folder == 'existing':
+            # Reset file pointer and upload
+            file_data.seek(0)
+            s3_key = upload_to_s3(file_data, class_name, student_name)
             record_attendance_in_dynamodb(class_name, student_name, 'Registered')
             return jsonify({
                 'success': True,
@@ -164,10 +162,11 @@ def upload():
 
             for item in response.get('Contents', []):
                 if any(item['Key'].endswith(ext) for ext in ALLOWED_EXTENSIONS):
-                    with BytesIO(file_data) as file_stream:
-                        if compare_faces(file_stream, item['Key']):
-                            recognized_name = item['Key'].split('/')[2]
-                            break
+                    # Reset file pointer for each comparison
+                    file_data.seek(0)
+                    if compare_faces(file_data, item['Key']):
+                        recognized_name = item['Key'].split('/')[2]
+                        break
 
             if not recognized_name:
                 return jsonify({
