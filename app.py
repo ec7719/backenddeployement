@@ -72,10 +72,12 @@ def get_classes():
         # Extract class names using regex
         classes = []
         pattern = r'classes/([^/]+)/'
-        for prefix in response.get('CommonPrefixes', []):
-            match = re.search(pattern, prefix)
-            if match:
-                classes.append(match.group(1))
+        if 'CommonPrefixes' in response:
+            for item in response['CommonPrefixes']:
+                prefix = item.get('Prefix', '')  # Extract the 'Prefix' value
+                match = re.search(pattern, prefix)
+                if match:
+                    classes.append(match.group(1))
         
         return jsonify({
             'success': True,
