@@ -57,6 +57,8 @@ def ensure_s3_folder_exists(bucket, folder_path):
         print(f"Error ensuring S3 folder exists: {e}")
         raise
 
+import re
+
 @app.route('/classes', methods=['GET'])
 def get_classes():
     try:
@@ -67,11 +69,13 @@ def get_classes():
             Delimiter='/'
         )
         
-        # Extract class names from common prefixes
-        classes = [
-            prefix.split('/')[-2] if prefix.endswith('/') else prefix.split('/')[-1]
-            for prefix in response.get('CommonPrefixes', [])
-        ] if response.get('CommonPrefixes') else []
+        # Extract class names using regex
+        classes = []
+        pattern = r'classes/([^/]+)/'
+        for prefix in response.get('CommonPrefixes', []):
+            match = re.search(pattern, prefix)
+            if match:
+                classes.append(match.group(1))
         
         return jsonify({
             'success': True,
