@@ -69,7 +69,7 @@ def get_classes():
         
         # Extract class names from common prefixes
         classes = [
-            prefix.lstrip('/').rstrip('/').split('/')[-1]
+            prefix.split('/')[-2] if prefix.endswith('/') else prefix.split('/')[-1]
             for prefix in response.get('CommonPrefixes', [])
         ] if response.get('CommonPrefixes') else []
         
@@ -83,6 +83,7 @@ def get_classes():
             'success': False,
             'message': str(e)
         }), 400
+
 
 def upload_to_s3(file_data, class_name, student_name):
     try:
