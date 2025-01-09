@@ -85,6 +85,7 @@ def get_classes():
         }), 400
 
 
+
 def upload_to_s3(file_data, class_name, student_name):
     try:
         filename = "image.jpg"  # Generic filename since we're using BytesIO
