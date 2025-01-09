@@ -162,6 +162,7 @@ def home():
 @app.route('/upload', methods=['POST'])
 def upload():
     try:
+        # Validate file
         if 'image' not in request.files:
             return jsonify({'success': False, 'message': 'No file uploaded'}), 400
 
@@ -169,12 +170,18 @@ def upload():
         if not file or not allowed_file(file.filename):
             return jsonify({'success': False, 'message': 'Invalid file type'}), 400
 
+        # Get form data
         class_name = request.form.get('class')
-        student_name = request.form.get('name')
+        student_name = request.form.get('name', '')  # Default to empty string
         folder = request.form.get('folder')
 
-        if not all([class_name, student_name, folder]):
-            return jsonify({'success': False, 'message': 'Missing required fields'}), 400
+        # Validate required fields
+        if not class_name:
+            return jsonify({'success': False, 'message': 'Class name is required'}), 400
+        if not folder:
+            return jsonify({'success': False, 'message': 'Folder type is required'}), 400
+        if folder == 'existing' and not student_name:
+            return jsonify({'success': False, 'message': 'Student name is required for registration'}), 400
 
         # Read file once and store in memory
         file_data = BytesIO(file.read())
