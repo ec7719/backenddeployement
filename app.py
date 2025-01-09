@@ -69,7 +69,7 @@ def get_classes():
         
         # Extract class names from common prefixes
         classes = [
-            prefix.strip('/').split('/')[-1] 
+            prefix.lstrip('/').rstrip('/').split('/')[-1]
             for prefix in response.get('CommonPrefixes', [])
         ] if response.get('CommonPrefixes') else []
         
