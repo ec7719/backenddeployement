@@ -28,11 +28,19 @@ MAX_CONTENT_LENGTH = 5 * 1024 * 1024  # 5MB
 # Configure CORS
 @app.after_request
 def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', 'https://master.dl76w5z8gkkdv.amplifyapp.com/')
+    response.headers.add('Access-Control-Allow-Origin', 'https://master.dl76w5z8gkkdv.amplifyapp.com')  # Removed trailing slash
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
     response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
-    return response
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    
+    # Handle OPTIONS method
+    if request.method == 'OPTIONS':
+        response.headers.add('Access-Control-Max-Age', '1728000')
+        response.headers['Content-Type'] = 'text/plain'
+        response.headers['Content-Length'] = '0'
+        return response
 
+    return response
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
