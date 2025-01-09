@@ -26,6 +26,7 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 MAX_CONTENT_LENGTH = 5 * 1024 * 1024  # 5MB
 
 # Configure CORS
+
 @app.after_request
 def after_request(response):
     response.headers.add('Access-Control-Allow-Origin', 'https://master.dl76w5z8gkkdv.amplifyapp.com')  # Removed trailing slash
@@ -55,6 +56,33 @@ def ensure_s3_folder_exists(bucket, folder_path):
     except Exception as e:
         print(f"Error ensuring S3 folder exists: {e}")
         raise
+
+@app.route('/classes', methods=['GET'])
+def get_classes():
+    try:
+        # List all folders under 'classes/' prefix
+        response = s3.list_objects_v2(
+            Bucket=S3_BUCKET_NAME,
+            Prefix='classes/',
+            Delimiter='/'
+        )
+        
+        # Extract class names from common prefixes
+        classes = [
+            prefix.strip('/').split('/')[-1] 
+            for prefix in response.get('CommonPrefixes', [])
+        ] if response.get('CommonPrefixes') else []
+        
+        return jsonify({
+            'success': True,
+            'classes': classes
+        })
+    except Exception as e:
+        print(f"Error fetching classes: {e}")
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 400
 
 def upload_to_s3(file_data, class_name, student_name):
     try:
