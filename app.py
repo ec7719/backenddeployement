@@ -109,16 +109,31 @@ def upload_to_s3(file_data, class_name, student_name):
 
 def record_attendance_in_dynamodb(class_name, student_name, status):
     try:
+        now = datetime.now()
         dynamodb.put_item(Item={
             'awstable': f"{class_name}-{student_name}",
             'className': class_name,
             'studentName': student_name,
-            'date': datetime.now().strftime('%Y-%m-%d'),
-            'timestamp': datetime.now().isoformat(),
-            'status': status
+            'date': now.strftime('%Y-%m-%d'),
+            'timestamp': now.isoformat(),
+            'status': status,
+            'lastAttendanceDate': now.strftime('%Y-%m-%d')
         })
     except Exception as e:
         print(f"Error recording attendance in DynamoDB: {e}")
+        raise
+def get_today_attendance_record(class_name, student_name):
+    try:
+        today = datetime.now().strftime('%Y-%m-%d')
+        response = dynamodb.get_item(
+            Key={'awstable': f"{class_name}-{student_name}"}
+        )
+        if 'Item' in response:
+            item = response['Item']
+            return item.get('date') == today, item.get('status')
+        return False, None
+    except Exception as e:
+        print(f"Error getting attendance record: {e}")
         raise
 
 def update_attendance_in_dynamodb(class_name, student_name, status):
@@ -211,29 +226,44 @@ def upload():
                         recognized_name = item['Key'].split('/')[2]
                         break
 
-            if not recognized_name:
+if not recognized_name:
                 return jsonify({
                     'success': False,
                     'message': 'Face recognition is unmatched among the students'
                 }), 400
 
+            # Check if already marked attendance/checked out today
+            has_record_today, current_status = get_today_attendance_record(class_name, recognized_name)
             status = 'Present' if folder == 'attendance' else 'Checked Out'
 
-            if status == 'Checked Out':
-                response = dynamodb.get_item(
-                    Key={'awstable': f"{class_name}-{recognized_name}"}
-                )
-                if 'Item' not in response or response['Item'].get('status') != 'Present':
+            if has_record_today:
+                if folder == 'attendance' and current_status in ['Present', 'Checked Out']:
                     return jsonify({
                         'success': False,
-                        'message': f'{recognized_name} cannot check out without being marked present first'
+                        'message': f'{recognized_name} has already marked attendance today'
                     }), 400
+                elif folder == 'checkout':
+                    if current_status == 'Checked Out':
+                        return jsonify({
+                            'success': False,
+                            'message': f'{recognized_name} has already checked out today'
+                        }), 400
+                    elif current_status != 'Present':
+                        return jsonify({
+                            'success': False,
+                            'message': f'{recognized_name} must mark attendance before checking out'
+                        }), 400
 
             update_attendance_in_dynamodb(class_name, recognized_name, status)
-
+            
             return jsonify({
                 'success': True,
-                'message': f'{status} marked for {recognized_name}'
+                'message': f'{status} marked for {recognized_name}',
+                'matchDetails': {
+                    'recognizedName': recognized_name,
+                    'status': status,
+                    'timestamp': datetime.now().isoformat()
+                }
             })
 
     except Exception as e:
