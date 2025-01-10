@@ -229,7 +229,7 @@ def upload():
                         recognized_name = item['Key'].split('/')[2]
                         break
 
-if not recognized_name:
+            if not recognized_name:
                 return jsonify({
                     'success': False,
                     'message': 'Face recognition is unmatched among the students'
@@ -269,12 +269,11 @@ if not recognized_name:
                 }
             })
 
-    except Exception as e:
-        print(f"Error processing upload: {e}")
-        return jsonify({
-            'success': False,
-            'message': str(e)
-        }), 400
-
+        except Exception as e:
+            print(f"Error processing upload: {e}")
+            return jsonify({
+                'success': False,
+                'message': str(e)
+            }), 400
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
