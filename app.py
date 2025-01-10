@@ -29,12 +29,12 @@ MAX_CONTENT_LENGTH = 5 * 1024 * 1024  # 5MB
 
 @app.after_request
 def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', 'https://master.dl76w5z8gkkdv.amplifyapp.com')  # Removed trailing slash
+    response.headers.add('Access-Control-Allow-Origin', 'https://master.dl76w5z8gkkdv.amplifyapp.com')
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
     response.headers.add('Access-Control-Allow-Credentials', 'true')
     
-    # Handle OPTIONS method
+    # Handle preflight requests
     if request.method == 'OPTIONS':
         response.headers.add('Access-Control-Max-Age', '1728000')
         response.headers['Content-Type'] = 'text/plain'
@@ -59,22 +59,25 @@ def ensure_s3_folder_exists(bucket, folder_path):
 
 import re
 
-@app.route('/classes', methods=['GET'])
+@app.route('/classes', methods=['GET', 'OPTIONS'])
 def get_classes():
+    # Handle preflight request
+    if request.method == 'OPTIONS':
+        return '', 200
+
     try:
-        # List all folders under 'classes/' prefix
+        # Your existing code for GET request
         response = s3.list_objects_v2(
             Bucket=S3_BUCKET_NAME,
             Prefix='classes/',
             Delimiter='/'
         )
         
-        # Extract class names using regex
         classes = []
         pattern = r'classes/([^/]+)/'
         if 'CommonPrefixes' in response:
             for item in response['CommonPrefixes']:
-                prefix = item.get('Prefix', '')  # Extract the 'Prefix' value
+                prefix = item.get('Prefix', '')
                 match = re.search(pattern, prefix)
                 if match:
                     classes.append(match.group(1))
