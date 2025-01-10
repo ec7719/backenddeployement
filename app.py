@@ -6,6 +6,7 @@ import dotenv
 from datetime import datetime
 from pathlib import Path
 from io import BytesIO
+import pytz
 
 # Load environment variables
 dotenv.load_dotenv()
@@ -110,15 +111,19 @@ def upload_to_s3(file_data, class_name, student_name):
         print(f"Error uploading to S3: {e}")
         raise
 
+
 def record_attendance_in_dynamodb(class_name, student_name, status):
     try:
-        now = datetime.now()
+        # Set the desired timezone
+        desired_tz = pytz.timezone('Asia/Kolkata')  # Replace with your desired timezone
+        now = datetime.now(desired_tz)  # Get the current time in the desired timezone
+
         dynamodb.put_item(Item={
             'awstable': f"{class_name}-{student_name}",
             'className': class_name,
             'studentName': student_name,
             'date': now.strftime('%Y-%m-%d'),
-            'timestamp': now
+            'timestamp': now.isoformat(),  # Includes timezone information
             'status': status,
             'lastAttendanceDate': now.strftime('%Y-%m-%d')
         })
@@ -150,7 +155,7 @@ def update_attendance_in_dynamodb(class_name, student_name, status):
             },
             ExpressionAttributeValues={
                 ":status": status,
-                ":timestamp": datetime.now()
+                ":timestamp": datetime.now().isoformat()
             }
         )
     except Exception as e:
@@ -295,7 +300,7 @@ def upload():
                 'matchDetails': {
                     'recognizedName': recognized_name,
                     'status': status,
-                    'timestamp': datetime.now()
+                    'timestamp': datetime.now().isoformat()
                 }
             })
 
