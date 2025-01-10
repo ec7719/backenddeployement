@@ -114,16 +114,19 @@ def upload_to_s3(file_data, class_name, student_name):
 
 def record_attendance_in_dynamodb(class_name, student_name, status):
     try:
-        # Set the desired timezone
-        desired_tz = pytz.timezone('Asia/Kolkata')  # Replace with your desired timezone
-        now = datetime.now(desired_tz)  # Get the current time in the desired timezone
+        # Set timezone to Asia/Kolkata
+        desired_tz = pytz.timezone('Asia/Kolkata')
+        now = datetime.now(desired_tz)
+
+        # Use strftime to customize the format
+        formatted_timestamp = now.strftime('%Y-%m-%d %H:%M:%S')  # Custom format
 
         dynamodb.put_item(Item={
             'awstable': f"{class_name}-{student_name}",
             'className': class_name,
             'studentName': student_name,
             'date': now.strftime('%Y-%m-%d'),
-            'timestamp': now.isoformat(),  # Includes timezone information
+            'timestamp': formatted_timestamp,  # Use the formatted time here
             'status': status,
             'lastAttendanceDate': now.strftime('%Y-%m-%d')
         })
