@@ -258,7 +258,7 @@ def upload():
                         }), 400
 
             update_attendance_in_dynamodb(class_name, recognized_name, status)
-            
+
             return jsonify({
                 'success': True,
                 'message': f'{status} marked for {recognized_name}',
@@ -269,11 +269,12 @@ def upload():
                 }
             })
 
-        except Exception as e:
-            print(f"Error processing upload: {e}")
-            return jsonify({
-                'success': False,
-                'message': str(e)
-            }), 400
+    except Exception as e:
+        print(f"Error processing upload: {e}")
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 400
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
