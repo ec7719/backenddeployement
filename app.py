@@ -118,7 +118,7 @@ def record_attendance_in_dynamodb(class_name, student_name, status):
             'className': class_name,
             'studentName': student_name,
             'date': now.strftime('%Y-%m-%d'),
-            'timestamp': now.isoformat(),
+            'timestamp': now
             'status': status,
             'lastAttendanceDate': now.strftime('%Y-%m-%d')
         })
@@ -150,7 +150,7 @@ def update_attendance_in_dynamodb(class_name, student_name, status):
             },
             ExpressionAttributeValues={
                 ":status": status,
-                ":timestamp": datetime.now().isoformat()
+                ":timestamp": datetime.now()
             }
         )
     except Exception as e:
@@ -295,7 +295,7 @@ def upload():
                 'matchDetails': {
                     'recognizedName': recognized_name,
                     'status': status,
-                    'timestamp': datetime.now().isoformat()
+                    'timestamp': datetime.now()
                 }
             })
 
