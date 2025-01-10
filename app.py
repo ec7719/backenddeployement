@@ -173,9 +173,39 @@ def compare_faces(source_image, target_image_key):
 def hello():
     return 'Hello World'
 
+@app.route('/attendance/download', methods=['GET'])
+def download_attendance():
+    class_name = request.args.get('class')
+    if not class_name:
+        return jsonify({'success': False, 'message': 'Class name is required'}), 400
+
+    try:
+        # Fetch data from DynamoDB for the given class
+        response = dynamodb.scan(
+            FilterExpression="className = :className",
+            ExpressionAttributeValues={":className": class_name}
+        )
+        records = response.get('Items', [])
+
+        # Convert records to CSV format
+        csv_data = "Student Name,Date,Status\n"
+        for record in records:
+            csv_data += f"{record['studentName']},{record['date']},{record['status']}\n"
+
+        # Return CSV as downloadable content
+        return csv_data, 200, {
+            'Content-Disposition': f'attachment; filename={class_name}_attendance.csv',
+            'Content-Type': 'text/csv'
+        }
+
+    except Exception as e:
+        print(f"Error fetching attendance records: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 @app.route('/', methods=['GET'])
 def home():
     return jsonify({'message': 'Welcome to the Flask App! This is the default page.'})
+
 
 @app.route('/upload', methods=['POST'])
 def upload():
