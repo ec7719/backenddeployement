@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from io import BytesIO
 import pytz
+TIMEZONE = pytz.timezone('Asia/Kolkata')
 
 # Load environment variables
 dotenv.load_dotenv()
@@ -59,6 +60,13 @@ def ensure_s3_folder_exists(bucket, folder_path):
         raise
 
 import re
+def get_formatted_time():
+    """Get current time in Indian timezone with proper formatting"""
+    return datetime.now(TIMEZONE).strftime('%Y-%m-%d %H:%M:%S')
+
+def get_current_date():
+    """Get current date in Indian timezone"""
+    return datetime.now(TIMEZONE).strftime('%Y-%m-%d')
 
 @app.route('/classes', methods=['GET', 'OPTIONS'])
 def get_classes():
@@ -114,28 +122,24 @@ def upload_to_s3(file_data, class_name, student_name):
 
 def record_attendance_in_dynamodb(class_name, student_name, status):
     try:
-        # Set timezone to Asia/Kolkata
-        desired_tz = pytz.timezone('Asia/Kolkata')
-        now = datetime.now(desired_tz)
-
-        # Use strftime to customize the format
-        formatted_timestamp = now.strftime('%Y-%m-%d %H:%M:%S')  # Custom format
+        current_date = get_current_date()
+        formatted_time = get_formatted_time()
 
         dynamodb.put_item(Item={
             'awstable': f"{class_name}-{student_name}",
             'className': class_name,
             'studentName': student_name,
-            'date': now.strftime('%Y-%m-%d'),
-            'timestamp': formatted_timestamp,  # Use the formatted time here
+            'date': current_date,
+            'timestamp': formatted_time,
             'status': status,
-            'lastAttendanceDate': now.strftime('%Y-%m-%d')
+            'lastAttendanceDate': current_date
         })
     except Exception as e:
         print(f"Error recording attendance in DynamoDB: {e}")
         raise
 def get_today_attendance_record(class_name, student_name):
     try:
-        today = datetime.now().strftime('%Y-%m-%d')
+        today = get_current_date()
         response = dynamodb.get_item(
             Key={'awstable': f"{class_name}-{student_name}"}
         )
@@ -146,9 +150,9 @@ def get_today_attendance_record(class_name, student_name):
     except Exception as e:
         print(f"Error getting attendance record: {e}")
         raise
-
 def update_attendance_in_dynamodb(class_name, student_name, status):
     try:
+        formatted_time = get_formatted_time()
         dynamodb.update_item(
             Key={'awstable': f"{class_name}-{student_name}"},
             UpdateExpression="set #status = :status, #timestamp = :timestamp",
@@ -158,13 +162,12 @@ def update_attendance_in_dynamodb(class_name, student_name, status):
             },
             ExpressionAttributeValues={
                 ":status": status,
-                ":timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                ":timestamp": formatted_time
             }
         )
     except Exception as e:
         print(f"Error updating attendance in DynamoDB: {e}")
         raise
-
 def compare_faces(source_image, target_image_key):
     try:
         response = rekognition.compare_faces(
