@@ -158,7 +158,7 @@ def update_attendance_in_dynamodb(class_name, student_name, status):
             },
             ExpressionAttributeValues={
                 ":status": status,
-                ":timestamp": datetime.now().isoformat()
+                ":timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             }
         )
     except Exception as e:
@@ -303,7 +303,7 @@ def upload():
                 'matchDetails': {
                     'recognizedName': recognized_name,
                     'status': status,
-                    'timestamp': datetime.now().isoformat()
+                    'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 }
             })
 
