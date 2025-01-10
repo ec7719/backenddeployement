@@ -190,7 +190,7 @@ def download_attendance():
         # Convert records to CSV format
         csv_data = "Student Name,Date,Status\n"
         for record in records:
-            csv_data += f"{record['studentName']},{record['date']},{record['status']}\n"
+            csv_data += f"{record['studentName']},{record['date']},{record['status']},{record['timestamp']}\n"
 
         # Return CSV as downloadable content
         return csv_data, 200, {
